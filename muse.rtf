@@ -19,15 +19,14 @@ b = \cf3 Bus\cf2 .audio(s, 1);\
 \}).send(s);\
 \
 \cf3 SynthDef\cf2 (\cf4 \\museverb\cf2 , \{\
-	\cf3 Out\cf2 .ar(0, \cf3 FreeVerb2\cf2 .ar(\cf3 In\cf2 .ar(b), \cf3 In\cf2 .ar(b), 0.45, 0.5, 0));\
+	\cf3 Out\cf2 .ar(0, \cf3 Pan2\cf2 .ar(\cf3 FreeVerb\cf2 .ar(\cf3 In\cf2 .ar(b), 0.45, 0.5)));\
 \}).send(s);\
-\
 \
 )\
 \
 (\
-	\cf5 var\cf2  counter0=0, counter1=0, shiftreg=rrand(0, pow(2,30).asInteger), handler, interval, theme, makeanote, tempo=320, basefreq=220, finefreq=0, rest=\cf6 false\cf2 , vol = 1, slider, updatedisplay;\
-	\cf5 var\cf2  lookup = [0,2,4,5,7,9,11,12];\
+	\cf5 var\cf2  counter0=0, counter1=0, shiftreg=rrand(0, pow(2,30).asInteger), handler, interval, theme, makeanote, tempo=320, basefreq=220, finefreq=0, rest=false, vol, slider, major, mminor, hminor, acc, lastmnote, mminorlook;\
+	\cf5 var\cf2  lookup;\
 	\cf5 var\cf2  mv = \cf3 Synth\cf2 (\cf4 \\museverb\cf2 , [], s);\
 	\cf5 var\cf2  note = \cf6 nil\cf2 ;\
 	interval = \cf3 Array\cf2 .with(2,8,10,20);\
@@ -50,22 +49,37 @@ b = \cf3 Bus\cf2 .audio(s, 1);\
 		\
 	makeanote = \{ \cf5 |freq|\cf2 \
 		\cf5 var\cf2  dur;\
+		\cf8 "makenote"\cf2 .postln;\
 		if (t == \cf6 nil\cf2 , \{ dur = 1 \}, \{ dur = 2/t.tempo \});\
 		\
-		if ((counter0 & 1) == 1 && (note != \cf6 nil)\cf2 , \
+		if ((counter0 & 1) == 1 && (note != \cf6 nil\cf2 ), \
 			\{note.set(\cf4 \\freq\cf2 , freq, \cf4 \\vol\cf2 , vol);\},\
 			\{note = \cf3 Synth\cf2 (\cf4 \\muse\cf2 , [\cf4 \\freq\cf2 , freq, \cf4 \\dur\cf2 , dur, \cf4 \\vol\cf2 , vol], mv, \cf4 \\addBefore\cf2 );\}\
 		);\
 	\};\
 	\
 	handler = \{ \
-		\cf5 var\cf2  notes, freq, parity;\
+		\cf5 var\cf2  notes, freq, parity, mnote;\
 		parity = theme.sum(slider).asInteger & 1;\
 		(\cf8 "shiftreg"\cf2  + (shiftreg&0x7fffffff).asHexString).postln;\
 		notes = interval.collect(slider);\
-		(notes[0] + (2 * notes[1]) + (4 * notes[2])).postln;\
-		freq = (basefreq.cpsmidi + lookup[notes[0] + (2 * notes[1]) + (4 * notes[2])]);\
+		mnote = notes[0] + (2 * notes[1]) + (4 * notes[2]);\
+		freq = (basefreq.cpsmidi + lookup[mnote]);\
+		(\cf8 "A"\cf2 +freq).postln;\
+		if ((mminorlook == 1) &&\
+			((mnote == 5) || (mnote == 6)) &&\
+			(lastmnote != \cf6 nil\cf2 )\
+		, \{\
+			if (lastmnote > mnote, \{\
+				freq = freq - 1;\
+				freq.postln;\
+			\});\
+		\});\
+		lastmnote = mnote;\
 		freq = freq.midicps * (1 + notes[3]);\
+		\cf0 (\cf8 "B"\cf2 +freq).postln;\
+		("R"+rest).postln;\
+		("N"+notes.sum).postln;\
 		if (rest == \cf6 false\cf2  || (notes.sum != 0)) \{\
 			makeanote.value(freq * finefreq);\
 		\};\
@@ -78,8 +92,8 @@ b = \cf3 Bus\cf2 .audio(s, 1);\
 		counter0 = (counter0+1) % 32;\
 	\};\
 	\
-	\
-	w = \cf3 Window\cf2 .new(\cf8 "The Muse"\cf2 , \cf3 Rect\cf2 (200,200,840,710));\
+	\cf3 Window\cf2 .allWindows.do \{ \cf5 |w|\cf2  if (w.name == \cf8 "The Muse"\cf2 ) \{ w.close \} \};\
+	w = \cf3 Window\cf2 .new(\cf8 "The Muse"\cf2 , \cf3 Rect\cf2 (200,200,800,710));\
 	c = \cf3 ControlSpec\cf2 .new(0, 39, step: 1);\
 	t = \cf3 TempoClock\cf2 .new;\
 	\
@@ -113,7 +127,43 @@ b = \cf3 Bus\cf2 .audio(s, 1);\
 	\cf3 Button\cf2 .new(w,\cf3 Rect\cf2 (80,680,80,30)).states_([[\cf8 "Step"\cf2 ]]).action_(\{\cf5 |button|\cf2  handler.value(lookup, basefreq);\});\
 	\cf3 Button\cf2 .new(w,\cf3 Rect\cf2 (160,680,80,30)).states_([[\cf8 "Reset"\cf2 ]]).action_(\{counter0 = counter1 = shiftreg = 0;\});\
 	\cf3 CheckBox\cf2 .new(w, \cf3 Rect\cf2 (240,680,80,30), \cf8 "Rest"\cf2 ).action = \{ \cf5 |state|\cf2  rest = state.value \};\
+	major = \cf3 CheckBox\cf2 .new(w, \cf3 Rect\cf2 (320,680,80,30), \cf8 "Major"\cf2 ).action = \{\
+		\cf8 "majorclick"\cf2 .postln;\
+		major.value.postln;\
+		if (major.value, \{\
+			\cf8 "majoron"\cf2 .postln;\
+			hminor.value = 0;\
+			mminor.value = 0;\
+			lookup = [0,2,4,5,7,9,11,12];\
+		\});\
+		mminorlook = \cf6 false\cf2 ;\
+	\};\
+	\
+	hminor = \cf3 CheckBox\cf2 .new(w, \cf3 Rect\cf2 (400,680,80,30), \cf8 "Harmonic"\cf2 ).action = \{\
+		\cf8 "hmonirclick"\cf2 .postln;\
+		if (hminor.value, \{\
+			\cf8 "hmoniron"\cf2 .postln;\
+			major.value = 0;\
+			mminor.value = 0;\
+			lookup = [0,2,3,5,7,8,11,12]\
+		\});\
+		mminorlook = \cf6 false\cf2 ;\
+	\};\
+	\
+	mminor = \cf3 CheckBox\cf2 .new(w, \cf3 Rect\cf2 (480,680,80,30), \cf8 "Melodic"\cf2 ).action = \{\
+		\cf8 "mmonirclick"\cf2 .postln;\
+		if (mminor.value, \{\
+			\cf8 "mminor"\cf2 .postln;\
+			hminor.value = 0;\
+			major.value = 0;\
+			lookup = [0,2,3,5,7,9,11,12]\
+		\});\
+		mminorlook = \cf6 true\cf2 ;\
+	\};\
+	\
+	major.valueAction = \cf6 true\cf2 ;\
 	\cf9 ~display\cf2  = \cf3 StaticText\cf2 (w,\cf3 Rect\cf2 (0,800,40,710)).font_(\cf8 "Monaco"\cf2 ).stringColor_(\cf3 Color\cf2 .gray(0,1));\
+	w.onClose = \{ t.stop \};\
 	w.front;\
 )\
 \
