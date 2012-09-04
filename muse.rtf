@@ -54,7 +54,8 @@ b = \cf3 Bus\cf2 .audio(s, 1);\
 		\
 		if ((counter0 & 1) && note != \cf6 nil\cf2 , \
 			\{note.set(\cf4 \\freq\cf2 , freq, \cf4 \\vol\cf2 , vol);\},\
-			\{note = \cf3 Synth\cf2 (\cf4 \\muse\cf2 , [\cf4 \\freq\cf2 , freq, \cf4 \\dur\cf2 , dur, \cf4 \\vol\cf2 , vol], mv, \cf4 \\addBefore\cf2 );\};\
+			\{note = \cf3 Synth\cf2 (\cf4 \\muse\cf2 , [\cf4 \\freq\cf2 , freq, \cf4 \\dur\cf2 , dur, \cf4 \\vol\cf2 , vol], mv, \cf4 \\addBefore\cf2 );\}\
+		);\
 	\};\
 	\
 	handler = \{ \
