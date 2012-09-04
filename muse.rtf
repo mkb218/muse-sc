@@ -1,0 +1,132 @@
+{\rtf1\ansi\ansicpg1252\cocoartf1138\cocoasubrtf470
+{\fonttbl\f0\fnil\fcharset0 Monaco;}
+{\colortbl;\red255\green255\blue255;\red0\green0\blue0;\red0\green0\blue191;\red0\green115\blue0;
+\red0\green0\blue255;\red0\green0\blue191;\red0\green115\blue0;\red51\green51\blue191;\red191\green0\blue0;
+\red96\green96\blue96;\red96\green96\blue96;\red255\green102\blue0;}
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural
+
+\f0\fs18 \cf2 (\
+b = \cf3 Bus\cf2 .audio(s, 1);\
+\
+\cf3 SynthDef\cf2 (\cf4 \\muse\cf2 , \{\cf5 |freq, dur, vol|\cf2 \
+	\cf5 var\cf2  env = \cf3 EnvGen\cf2 .kr(\cf3 Env\cf2 .linen(sustainTime: dur*0.98, attackTime: 0.01*dur, releaseTime: 0.01*dur), doneAction: 2);\
+	\cf3 Out\cf2 .ar(b, \cf3 LPF\cf2 .ar(\cf3 Pulse\cf2 .ar(freq, width: 0.5, mul: vol*env), 11000));\
+\}).send(s);\
+\
+\cf6 SynthDef\cf0 (\cf7 \\muse\cf0 , \{\cf5 |freq, dur, vol|\cf0 \
+	\cf5 var\cf0  env = \cf6 EnvGen\cf0 .kr(\cf6 Env\cf0 .linen(sustainTime: dur*0.98, attackTime: 0.01*dur, releaseTime: 0.01*dur), doneAction: 2);\
+	\cf6 Out\cf0 .ar(0, \cf6 LPF\cf0 .ar(\cf6 Pulse\cf0 .ar(freq, width: MouseX.kr(0.01, 0.99), mul: vol*env*MouseY.kr, add: Resonz.ar(Saw.ar(freq, mul: vol*env*MouseY.kr(1,0)), freq*1.2, 12)), 11000));\
+\}).send(s);\
+\cf2 \
+\cf3 SynthDef\cf2 (\cf4 \\museverb\cf2 , \{\
+	\cf3 Out\cf2 .ar(0, \cf3 FreeVerb2\cf2 .ar(\cf3 In\cf2 .ar(b), \cf3 In\cf2 .ar(b), 0.45, 0.5, 0));\
+\}).send(s);\
+\
+\
+)\
+\
+(\
+	\cf5 var\cf2  counter0=0, counter1=0, shiftreg=rrand(0, pow(2,30).asInteger), handler, interval, theme, makeanote, tempo=320, basefreq=220, finefreq=0, rest=\cf8 false\cf2 , vol = 1, slider, updatedisplay;\
+	\cf5 var\cf2  depth = 8, calls = 0;\
+	\cf5 var\cf2  lookup = [0,2,4,5,7,9,11,12];\
+	\cf5 var\cf2  mv = \cf3 Synth\cf2 (\cf4 \\museverb\cf2 , [], s);\
+	interval = \cf3 Array\cf2 .with(2,8,10,20);\
+	theme = \cf3 Array\cf2 .with(5,7,25,20);\
+	slider = \{\
+		\cf5 |sliderval, i|\cf2 \
+		\cf5 var\cf2  choice = 0;\
+		(sliderval == 0).if \{ choice = 0 \}; \cf9 // off\cf2 \
+		(sliderval == 1).if \{ choice = 1 \}; \cf9 // on\cf2 \
+		(sliderval == 2).if \{ choice = \cf0 counter0\cf2  & 1 \}; \cf9 // c1/2\cf2 \
+		(sliderval == 3).if \{ choice = \cf0 counter0\cf2  & \cf0 2 >> 1\cf2  \}; \cf9 // c1\cf2 \
+		(sliderval == 4).if \{ choice = \cf0 counter0\cf2  & \cf0 4 >> 2\cf2  \}; \cf9 // c2\cf2 \
+		(sliderval == 5).if \{ choice = \cf0 counter0\cf2  & 8 >> 3 \}; \cf9 // c4\cf2 \
+		(sliderval == 6).if \{ choice = \cf0 counter0\cf2  & 16 >> 4 \}; \cf9 // c8\cf2 \
+		(sliderval == 7).if \{ choice = (counter1 / 3).asInteger % 2 \}; \cf9 // c3\cf2 \
+		(sliderval == 8).if \{ choice = (counter1 >= 6).asInteger \}; \cf9 // c6\cf2 \
+		(sliderval >= 9 && (sliderval <= 39)).if \{ choice = (shiftreg >> (sliderval.asInteger - 9)) & 1 \};\
+		choice;\
+	\};		\
+		\
+	makeanote = \{ \cf5 |freq|\
+		var dur;\cf2 \
+		if (t == nil, \{ dur = 1 \}, \{ dur = 1/t.tempo \});\
+		\
+		\cf3 Synth\cf2 (\cf4 \\muse\cf2 , [\cf4 \\freq\cf2 , freq, \cf4 \\dur\cf2 , dur, \cf4 \\vol\cf2 , vol], mv, \cf4 \\addBefore\cf2 );\
+	\};\
+	\
+	handler = \{ \
+		\cf5 var\cf2  notes, freq, parity;\
+		parity = theme.sum(slider).asInteger & 1;\
+		(\cf10 "shiftreg"\cf2  + (shiftreg&0x7fffffff).asHexString).postln;\
+		notes = interval.collect(slider);\
+		(\cf0 notes[0] + (2 * notes[1]) + (4 * notes[2])).postln\cf2 ;\
+		freq = (basefreq.cpsmidi + lookup[notes[0] + (2 * notes[1]) + (4 * notes[2])]);\
+		freq = freq.midicps * (1 + notes[3]);\
+		if (rest == \cf8 false\cf2  || (notes.sum != 0)) \{\
+			makeanote.value(freq * finefreq);\
+		\};\
+\cf0 		(\cf11 "counter0"\cf0  + counter0).postln;\
+		(\cf11 "counter1"\cf0  + counter1).postln;\
+		counter0 = (counter0+1) % 32;\
+		counter1 = (counter1+1) % 12;\
+		shiftreg = shiftreg << 1 | parity;\
+\cf2 	\};\
+	\
+	\
+	w = \cf3 Window\cf2 .new(\cf10 "The Muse"\cf2 , \cf3 Rect\cf2 (200,200,840,710));\
+	c = \cf3 ControlSpec\cf2 .new(0, 39, step: 1);\
+	t = \cf3 TempoClock\cf2 .new;\
+	\
+	\cf3 EZSlider\cf2 .new(w, \cf3 Rect\cf2 (0,0,800,75), \cf10 "Interval A"\cf2 , c, \{ \cf5 |ez|\cf2  interval[0] = ez.value\}, initAction:\cf8 true\cf2 );\
+	\cf3 EZSlider\cf2 .new(w, \cf3 Rect\cf2 (0,75,800,75), \cf10 "Interval B"\cf2 , c, \{ \cf5 |ez|\cf2  interval[1] = ez.value\}, initAction:\cf8 true\cf2 );\
+	\cf3 EZSlider\cf2 .new(w, \cf3 Rect\cf2 (0,150,800,75), \cf10 "Interval C"\cf2 , c, \{ \cf5 |ez|\cf2  interval[2] = ez.value\}, initAction:\cf8 true\cf2 );\
+	\cf3 EZSlider\cf2 .new(w, \cf3 Rect\cf2 (0,225,800,75), \cf10 "Interval D"\cf2 , c, \{ \cf5 |ez|\cf2  interval[3] = ez.value\}, initAction:\cf8 true\cf2 );\
+	\cf3 EZSlider\cf2 .new(w, \cf3 Rect\cf2 (0,300,800,75), \cf10 "Theme W"\cf2 , c, \{ \cf5 |ez|\cf2  theme[0] = ez.value\}, initAction:\cf8 true\cf2 );\
+	\cf3 EZSlider\cf2 .new(w, \cf3 Rect\cf2 (0,375,800,75), \cf10 "Theme X"\cf2 , c, \{ \cf5 |ez|\cf2  theme[1] = ez.value\}, initAction:\cf8 true\cf2 );\
+	\cf3 EZSlider\cf2 .new(w, \cf3 Rect\cf2 (0,450,800,75), \cf10 "Theme Y"\cf2 , c, \{ \cf5 |ez|\cf2  theme[2] = ez.value\}, initAction:\cf8 true\cf2 );\
+	\cf3 EZSlider\cf2 .new(w, \cf3 Rect\cf2 (0,525,800,75), \cf10 "Theme Z"\cf2 , c, \{ \cf5 |ez|\cf2  theme[3] = ez.value\}, initAction:\cf8 true\cf2 );\
+	\
+	\cf3 EZSlider\cf2 .new(w, \cf3 Rect\cf2 (0,600,400,40), \cf10 "Volume"\cf2 , action: \{\cf5 |ez|\cf2  vol = ez.value;\}, initVal: 0.75, initAction:\cf8 true\cf2 );\
+	\cf3 EZSlider\cf2 .new(w, \cf3 Rect\cf2 (400,600,400,40), \cf10 "Pitch"\cf2 , \cf3 ControlSpec\cf2 (0,127, step:1),action: \{\cf5 |ez|\cf2  basefreq = ez.value.midicps;\}, initVal: 32, initAction:\cf8 true\cf2 );\
+	\cf3 EZSlider\cf2 .new(w, \cf3 Rect\cf2 (0,640,400,40), \cf10 "Fine Pitch"\cf2 , \cf3 ControlSpec\cf2 (1/1.0595465, 1.0595465), action: \{\cf5 |ez|\cf2  finefreq = ez.value\}, initVal: 1, initAction: \cf8 true\cf2 );\
+	\cf12 ~tempobutton\cf2  = \cf3 EZSlider\cf2 .new(w, \cf3 Rect\cf2 (400,640,400,40), \cf10 "Tempo"\cf2 , \cf3 ControlSpec\cf2 (12, 600), action: \{\cf5 |ez|\cf2  if (t != \cf8 nil\cf2 ) \{t.tempo = ez.value / 60\}\}, initVal: 160, initAction: \cf8 true\cf2 );\
+	\cf3 Button\cf2 .new(w,\cf3 Rect\cf2 (0,680,80,30)).states_([[\cf10 "Start"\cf2 ],[\cf10 "Stop"\cf2 ]]).action_(\{\
+		\cf5 |button|\cf2 \
+		if ((button.value == 0), \{\
+			\cf10 "hold"\cf2 .postln;\
+			t.stop;\
+			t = \cf8 nil\cf2 ;\
+		\}, \{\
+			\cf10 "foof"\cf2 .postln;\
+			t = \cf3 TempoClock\cf2 .new(\cf12 ~tempobutton\cf2 .value/60);\
+			mv.free;\
+			mv = \cf3 Synth\cf2 (\cf4 \\museverb\cf2 , [], s);\
+			t.sched(0, \{ handler.value(lookup, basefreq); 1\})\
+		\});\
+	\});\
+	\cf3 Button\cf2 .new(w,\cf3 Rect\cf2 (80,680,80,30)).states_([[\cf10 "Step"\cf2 ]]).action_(\{\cf5 |button|\cf2  handler.value(lookup, basefreq);\});\
+	\cf3 Button\cf2 .new(w,\cf3 Rect\cf2 (160,680,80,30)).states_([[\cf10 "Reset"\cf2 ]]).action_(\{counter0 = counter1 = shiftreg = 0;\});\
+	\cf3 CheckBox\cf2 .new(w, \cf3 Rect\cf2 (240,680,80,30), \cf10 "Rest"\cf2 ).action = \{ \cf5 |state|\cf2  rest = state.value \};\
+	\cf12 ~display\cf2  = \cf3 StaticText\cf2 (w,\cf3 Rect\cf2 (0,800,40,710)).font_(\cf10 "Monaco"\cf2 ).stringColor_(\cf3 Color\cf2 .gray(0,1));\
+	w.front;\
+	\
+	\cf3 AppClock\cf2 .sched(0, \{\
+		\cf5 var\cf2  ud = \cf3 Array\cf2 .new(40),cnt = (counter0 << 4 | counter1).asInteger, st;\
+		[0,1,cnt & 1,\
+			cnt & 2 >> 1,\
+			cnt & 4 >> 2,\
+			cnt & 16 >> 4,\
+			cnt & 256 >> 8,\
+			cnt & 8 >> 3,\
+			cnt & 64 >> 6].do\{ \cf5 |n|\cf2  ud.add(n) \};\
+		\cf3 Array\cf2 .fill(39-9+1, \{\cf5 |n|\cf2  n+9\}).do \{\cf5 |n|\cf2  ud.add((shiftreg >> (n.asInteger - 9)) & 1) \};\
+		st = ud.collect \{ \cf5 |n|\cf2  if (n > 0, \{ \cf10 "X\\n"\cf2  \}, \{ \cf10 ""\cf2  \}) \}.join(\cf10 ""\cf2 );\
+		\cf12 ~display\cf2 .string_(st);\
+		1;\
+	\});\
+)\
+\
+\pard\pardeftab720
+\cf2 \
+}
