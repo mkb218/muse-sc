@@ -73,7 +73,7 @@ b = \cf3 Bus\cf2 .audio(s, 1);\
 		(\cf8 "counter1"\cf2  + counter1).postln;\
 		if (counter0&1, \{\
 			counter1 = (counter1+1) % 12;\
-			shiftreg = shiftreg <<  | parity;\
+			shiftreg = shiftreg << 1 | parity;\
 		\});\
 		counter0 = (counter0+1) % 32;\
 	\};\
