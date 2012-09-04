@@ -9,7 +9,7 @@
 b = \cf3 Bus\cf2 .audio(s, 1);\
 \
 \cf3 SynthDef\cf2 (\cf4 \\muse\cf2 , \{\cf5 |freq, dur, vol|\cf2 \
-	\cf5 var\cf2  env = \cf3 EnvGen\cf2 .kr(\cf3 Env\cf2 .linen(sustainTime: dur*0.98, attackTime: 0.01*dur, releaseTime: 0.01*dur), doneAction: 2);\
+	\cf5 var\cf2  env = \cf3 EnvGen\cf2 .kr(\cf3 Env\cf2 .linen(sustainTime: dur*0.925, attackTime: 0.075*dur, releaseTime: 0.01*dur), doneAction: 2);\
 	\cf3 Out\cf2 .ar(b, \cf3 LPF\cf2 .ar(\cf3 Pulse\cf2 .ar(freq, width: 0.5, mul: vol*env), 11000));\
 \}).send(s);\
 \
@@ -52,7 +52,7 @@ b = \cf3 Bus\cf2 .audio(s, 1);\
 		\cf5 var\cf2  dur;\
 		if (t == \cf6 nil\cf2 , \{ dur = 1 \}, \{ dur = 2/t.tempo \});\
 		\
-		if ((counter0 & 1) && note != \cf6 nil\cf2 , \
+		if ((counter0 & 1) == 1 && (note != \cf6 nil)\cf2 , \
 			\{note.set(\cf4 \\freq\cf2 , freq, \cf4 \\vol\cf2 , vol);\},\
 			\{note = \cf3 Synth\cf2 (\cf4 \\muse\cf2 , [\cf4 \\freq\cf2 , freq, \cf4 \\dur\cf2 , dur, \cf4 \\vol\cf2 , vol], mv, \cf4 \\addBefore\cf2 );\}\
 		);\
@@ -71,7 +71,7 @@ b = \cf3 Bus\cf2 .audio(s, 1);\
 		\};\
 		(\cf8 "counter0"\cf2  + counter0).postln;\
 		(\cf8 "counter1"\cf2  + counter1).postln;\
-		if (counter0&1, \{\
+		if (counter0&1 == 1, \{\
 			counter1 = (counter1+1) % 12;\
 			shiftreg = shiftreg << 1 | parity;\
 		\});\
